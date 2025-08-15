@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GP du Monde - Gestion des Cargaisons</title>
+  <title>CARGO EXPRESS SÉNÉGAL</title>
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="./../globe-1334084.png" >
   <!-- Tailwind CSS CDN - Pour la production, il est recommandé de configurer Tailwind localement. -->

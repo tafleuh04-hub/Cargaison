@@ -1,4 +1,6 @@
 import { ColisManager } from "./services/ColisManager.js"
+import { InvoiceEmailService } from "./services/InvoiceEmailService.js"
+
 interface ColisData {
   type: string
   poids: number
@@ -17,8 +19,9 @@ interface CargaisonSelection {
   type: string
 }
 
-class EnregistrementColis {
+export class EnregistrementColis {
   private colisManager: ColisManager
+  private invoiceEmailService: InvoiceEmailService
   private selectedCargaisonData: CargaisonSelection | null = null
   private currentColisData: ColisData | null = null
   private modal: HTMLElement | null = null
@@ -27,6 +30,7 @@ class EnregistrementColis {
   constructor() {
     console.log("EnregistrementColis initialisé")
     this.colisManager = new ColisManager()
+    this.invoiceEmailService = InvoiceEmailService.getInstance()
     this.initializeEventListeners()
     this.initializeModals()
   }
@@ -209,6 +213,10 @@ class EnregistrementColis {
 
         // Réinitialiser le formulaire
         this.reinitialiserFormulaire()
+
+        // Générer la facture et envoyer l'email
+        const cargaisonData = await this.getCargaisonData(cargaisonId)
+        await this.genererFactureEtEnvoyerEmail(colisData, cargaisonData)
       }
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error)
@@ -470,7 +478,7 @@ class EnregistrementColis {
   }
 
   private showSuccessModal(title: string, message: string): void {
-    this.creerToast("success", title, message)
+    this.creerToast("success", title, message, 8000) // 8 secondes pour les messages importants
   }
 
   private showError(message: string): void {
@@ -489,7 +497,12 @@ class EnregistrementColis {
     this.creerToast("info", "Information", message)
   }
 
-  private creerToast(type: "success" | "error" | "warning" | "info", title: string, message: string): void {
+  private creerToast(
+    type: "success" | "error" | "warning" | "info",
+    title: string,
+    message: string,
+    delai?: number,
+  ): void {
     const toastContainer = document.getElementById("toast-root") || this.creerContainerToast()
 
     const couleurs = {
@@ -529,7 +542,7 @@ class EnregistrementColis {
       if (toast.parentElement) {
         toast.remove()
       }
-    }, 5000)
+    }, delai || 5000)
   }
 
   private creerContainerToast(): HTMLElement {
@@ -555,6 +568,56 @@ class EnregistrementColis {
     const typeSelect = document.getElementById("package-product-type") as HTMLSelectElement
     if (typeSelect) {
       typeSelect.value = ""
+    }
+  }
+
+  private async getCargaisonData(cargaisonId: string): Promise<any> {
+    try {
+      const response = await fetch(`http://localhost:3000/cargaisons/${cargaisonId}`)
+      if (!response.ok) {
+        throw new Error(`Erreur lors de la récupération de la cargaison: ${response.status}`)
+      }
+      return await response.json()
+    } catch (error) {
+      console.error("Erreur récupération cargaison:", error)
+      throw error
+    }
+  }
+
+  private async genererFactureEtEnvoyerEmail(colisData: ColisData, cargaisonData: any): Promise<void> {
+    try {
+      console.log(" Génération de la facture...")
+
+      // 1. Préparer les données de la facture
+      const invoiceData = await this.invoiceEmailService.prepareInvoiceData(colisData, cargaisonData)
+
+      console.log(" Données facture préparées:", invoiceData)
+
+      // 2. Afficher la facture dans un modal
+      this.invoiceEmailService.showInvoiceModal(invoiceData)
+
+      // 3. Envoyer l'email de confirmation avec le code de suivi
+      console.log(" Envoi de l'email de confirmation...")
+
+      try {
+        await this.invoiceEmailService.sendTrackingEmail(invoiceData)
+
+        this.creerToast("success", "Email envoyé !", `Code de suivi envoyé à ${colisData.destinataire?.email}`)
+
+        console.log("Email envoyé avec succès")
+      } catch (emailError) {
+        console.error(" Erreur envoi email:", emailError)
+
+        const errorMessage = emailError instanceof Error ? emailError.message : "Erreur inconnue"
+        this.creerToast(
+          "warning",
+          "Email non envoyé",
+          `La facture est générée mais l'envoi de l'email a échoué: ${errorMessage}`,
+        )
+      }
+    } catch (error) {
+      console.error("Erreur lors de la génération de la facture:", error)
+      this.showError("Erreur lors de la génération de la facture")
     }
   }
 }

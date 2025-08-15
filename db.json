@@ -56,6 +56,23 @@
             "email": "seckmoustapha238@gmail.com",
             "adresse": "Petit Mbao"
           }
+        },
+        {
+          "id": "COL-5",
+          "libelle": "pomme",
+          "poids": 54,
+          "type": "ALIMENTAIRE",
+          "codeDeSuivi": "COL-5",
+          "etatAvancement": "EN_ATTENTE",
+          "etatColis": "ARCHIVE",
+          "dateCreation": "2025-08-15T21:40:07.463Z",
+          "destinataire": {
+            "nom": "Ly",
+            "prenom": "Amadou",
+            "telephone": "77 266 18 83",
+            "email": "tafleuh04@gmail.com",
+            "adresse": "Petit Mbao"
+          }
         }
       ],
       "validation": true
@@ -193,7 +210,25 @@
       "dateArrivee": "2025-08-14T00:00:00.000Z",
       "etatAvancement": "EN_ATTENTE",
       "etatGlobal": "OUVERT",
-      "colis": [],
+      "colis": [
+        {
+          "id": "COL-6",
+          "libelle": "angrais",
+          "poids": 200,
+          "type": "CHIMIQUE",
+          "codeDeSuivi": "COL-6",
+          "etatAvancement": "EN_ATTENTE",
+          "etatColis": "ARCHIVE",
+          "dateCreation": "2025-08-15T21:56:49.006Z",
+          "destinataire": {
+            "nom": "Seck",
+            "prenom": "Moustapha",
+            "telephone": "78 444 19 09",
+            "email": "tafleuh04@gmail.com",
+            "adresse": "Petit Mbao"
+          }
+        }
+      ],
       "validation": true
     },
     {

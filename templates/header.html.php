@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GP du Monde - Gestion des Cargaisons</title>
+  <title>CARGO EXPRESS SÉNÉGAL</title>
   <!-- Tailwind CSS CDN - For production, consider a local Tailwind CSS setup for better performance and control. -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome CDN -->

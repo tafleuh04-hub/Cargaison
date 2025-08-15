@@ -1,5 +1,6 @@
 import { ColisManager } from "./services/ColisManager.js";
-class EnregistrementColis {
+import { InvoiceEmailService } from "./services/InvoiceEmailService.js";
+export class EnregistrementColis {
     constructor() {
         this.selectedCargaisonData = null;
         this.currentColisData = null;
@@ -7,6 +8,7 @@ class EnregistrementColis {
         this.confirmButton = null;
         console.log("EnregistrementColis initialisé");
         this.colisManager = new ColisManager();
+        this.invoiceEmailService = InvoiceEmailService.getInstance();
         this.initializeEventListeners();
         this.initializeModals();
     }
@@ -157,6 +159,9 @@ class EnregistrementColis {
                 this.showSuccessModal("Colis enregistré avec succès !", `Le colis "${colisData.libelle}" (${colisData.poids}kg)${destinataireInfo} a été ajouté à la cargaison ${cargaisonId}`);
                 // Réinitialiser le formulaire
                 this.reinitialiserFormulaire();
+                // Générer la facture et envoyer l'email
+                const cargaisonData = await this.getCargaisonData(cargaisonId);
+                await this.genererFactureEtEnvoyerEmail(colisData, cargaisonData);
             }
         }
         catch (error) {
@@ -374,7 +379,7 @@ class EnregistrementColis {
         console.log("Cargaison sélectionnée, prêt pour confirmation");
     }
     showSuccessModal(title, message) {
-        this.creerToast("success", title, message);
+        this.creerToast("success", title, message, 8000); // 8 secondes pour les messages importants
     }
     showError(message) {
         this.creerToast("error", "Erreur", message);
@@ -388,7 +393,7 @@ class EnregistrementColis {
     showInfo(message) {
         this.creerToast("info", "Information", message);
     }
-    creerToast(type, title, message) {
+    creerToast(type, title, message, delai) {
         const toastContainer = document.getElementById("toast-root") || this.creerContainerToast();
         const couleurs = {
             success: "bg-green-600 border-green-500",
@@ -423,7 +428,7 @@ class EnregistrementColis {
             if (toast.parentElement) {
                 toast.remove();
             }
-        }, 5000);
+        }, delai || 5000);
     }
     creerContainerToast() {
         let container = document.getElementById("toast-root");
@@ -447,6 +452,45 @@ class EnregistrementColis {
         const typeSelect = document.getElementById("package-product-type");
         if (typeSelect) {
             typeSelect.value = "";
+        }
+    }
+    async getCargaisonData(cargaisonId) {
+        try {
+            const response = await fetch(`http://localhost:3000/cargaisons/${cargaisonId}`);
+            if (!response.ok) {
+                throw new Error(`Erreur lors de la récupération de la cargaison: ${response.status}`);
+            }
+            return await response.json();
+        }
+        catch (error) {
+            console.error("Erreur récupération cargaison:", error);
+            throw error;
+        }
+    }
+    async genererFactureEtEnvoyerEmail(colisData, cargaisonData) {
+        try {
+            console.log(" Génération de la facture...");
+            // 1. Préparer les données de la facture
+            const invoiceData = await this.invoiceEmailService.prepareInvoiceData(colisData, cargaisonData);
+            console.log(" Données facture préparées:", invoiceData);
+            // 2. Afficher la facture dans un modal
+            this.invoiceEmailService.showInvoiceModal(invoiceData);
+            // 3. Envoyer l'email de confirmation avec le code de suivi
+            console.log(" Envoi de l'email de confirmation...");
+            try {
+                await this.invoiceEmailService.sendTrackingEmail(invoiceData);
+                this.creerToast("success", "Email envoyé !", `Code de suivi envoyé à ${colisData.destinataire?.email}`);
+                console.log("Email envoyé avec succès");
+            }
+            catch (emailError) {
+                console.error(" Erreur envoi email:", emailError);
+                const errorMessage = emailError instanceof Error ? emailError.message : "Erreur inconnue";
+                this.creerToast("warning", "Email non envoyé", `La facture est générée mais l'envoi de l'email a échoué: ${errorMessage}`);
+            }
+        }
+        catch (error) {
+            console.error("Erreur lors de la génération de la facture:", error);
+            this.showError("Erreur lors de la génération de la facture");
         }
     }
 }
